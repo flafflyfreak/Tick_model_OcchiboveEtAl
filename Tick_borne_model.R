@@ -1,10 +1,10 @@
-Appendix S3. R code of eco-epidemiological model of tick-borne pathogen (parameters and starting conditions are listed in Table 2). 
-#requires the package deSolve
+# R code of eco-epidemiological model of tick-borne pathogen (parameters and initial conditions are listed in Table 2 of the main text). 
+# requires the package deSolve
 require("deSolve")
 
 # define the function
 multihostTICK.model <- function( t, x, parameters )
-        
+  
 { l <- x[1]
 sn <- x[2]
 In <- x[3]
@@ -65,7 +65,7 @@ with(as.list(parameters),
      # adult stage
      dia <- beta[4]*d[1]*nw*In+beta[4]*d[1]*nb*In+beta[5]*d[2]*nj*In+beta[6]*d[3]*np*In+beta[6]*d[4]*nd*In+(beta[4]*d[1]*ib*taub[2]*sn+ beta[4]*d[1]*iw*tauw[2]*sn)*(1+1/k)-rhov[4]*ia-(beta[7]*nw*ia+beta[7]*nb*ia+beta[8]*nj*ia+beta[9]*np*ia+beta[9]*nd*ia)*(1+1/k)
      dsa <- (beta[4]*d[1]*(rw+sw)*sn+beta[4]*d[1]*(rb+sb)*sn)+beta[5]*d[2]*nj*sn+beta[6]*d[3]*np*sn+beta[6]*d[4]*nd*sn-rhov[4]*sa-beta[7]*nw*sa-beta[7]*nb*sa-beta[8]*nj*sa-beta[9]*np*sa-beta[9]*nd*sa
-
+     
      # hosts
      dsw <- r.temp.w*nw*((Kw-nw-cwb*nb-cwj*nj)/Kw) -tauv[1]*beta[4]*sw*In-tauv[2]*beta[7]*sw*ia - ((g*sw^2)/(sw^2+h^2)) - ((alfa*np*sw)/(deltaw+nw+((deltaw/deltab)*nb+(deltaw/deltaj)*nj)))
      diw <- tauv[1]*beta[4]*sw*In + tauv[2]*beta[7]*sw*ia -sigmaw*iw -((g*iw^2)/(iw^2+h^2))- ((alfa*np*iw)/(deltaw+nw+((deltaw/deltab)*nb+(deltaw/deltaj)*nj)))
@@ -82,19 +82,22 @@ with(as.list(parameters),
 )}
 
 # parameters
-times <- seq(0,20,length=7300)  
-N.crit<-11  # c(5,11,22) # half delta, delta, from Tapper (1979), and double delta (from Hanski and Korpimaki 1995)
-d.high<-2.5 # c(2.5, 5) # from Hanski and Korpimaki 1995
-gw<-c(-0.006,0.04)  # two different growth rates
-gb<-c(-0.002,0.007)  # two different growth rates
-M<-c(0.02025503,0.01906557,0.02175, 0.0092,0.07845)
-alfa <- 1
-# estimated according to Turchin and Hanski 1997 but with pooled data (Wales excluding Skomer) (predator: least weasel)
-alfas<-7.674456522 
-# # estimated according to Turchin and Hanski 1997 but with weights from PanTHERIA
+times <- seq(0,20,length=7300)  # 20 years daily time step
+
+N.crit<-11   
+d.high<-2.5 
+
+gw<-c(-0.006,0.04)  # wood mouse growth rates
+gb<-c(-0.002,0.007)  # bank vole growth rates
+
+M<-c(0.02025503,0.01906557,0.02175, 0.0092,0.07845) # body mass in g for wood mouse, bank vole, common shrew, and weasel respectively
+
+alfa <- 1 # for rodents
+alfas<-7.674456522 # for shrews
 delta <- c(11.31050155,11.31050155,11.31050155,22.621)   
-# estimated according to Turchin and Hanski 1997 (predator: least weasel) (no preferences among rodents)
 # shrew value is doubled because not preferred prey
+
+# competition factors vectors
 cwb_sens.an <- seq(0, 0.9851319, length.out = 6)
 cbw_sens.an <- seq(0, 1.015092, length.out = 6)
 cfw_sens.an <- seq(0, 0.9513746,length.out = 6)
@@ -107,21 +110,33 @@ cfj_sens.an <- seq(0,0.5475578,length.out = 6)
 cjw_sens.an <- seq(0, 1.740648, length.out = 6)
 cjb_sens.an <- seq(0, 1.714768, length.out = 6)
 cjf_sens.an <- seq(0, 1.826291,length.out = 6)
+
+# matrix for competition factors to be included in the model
 c.mat<-c(cwb_sens.an[2],cbw_sens.an[2],cfw_sens.an[2],cfb_sens.an[2],cwf_sens.an[2],cbf_sens.an[2],cwj_sens.an[2],cbj_sens.an[2],cfj_sens.an[1],cjw_sens.an[4],cjb_sens.an[4],cjf_sens.an[5])
-beta <- c(0.040,0.04,0.025,0.04,0.04,0.04,0.02,0.02,0.06)  # Dobson et al. 2011 probability of feeding/host-finding (other values see .Rmd file)
-d <- c(0.415,0.496,0.639,0.563)/3 # values from LoGiudice et al. 2003 (divided by 3 because of the 3 stages) (white-footed mouse, sorex, skunk, white-tailed deer) 
-num_egg = 1500 # Norman et al 1999 max per capita birth rate of larval ticks per adult tick (other values see .Rmd file)
-rhov <- c(0.002,0.001428,0.000476,0.000408) # Dobson et al. 2011 per capita natural death rate of the ticks eggs (Ogden et al. 2007),larvae, nymphs, adults (other values see .Rmd file)
-g= 0 # 0.49312 # estimated according to the formula proposed by Turchin and Hanski 1997 
-h = 9.9 # 13.5 from Turchin and Hanski 1997 
+
+# contact rates
+beta <- c(0.040,0.04,0.025,0.04,0.04,0.04,0.02,0.02,0.06)
+
+# molting success
+d <- c(0.415,0.496,0.639,0.563)/3  
+
+num_egg = 1500 # for I. ricinus tick per capita birth rate of larval ticks
+num_egg = 1000 # for I. scapularis
+
+rhov <- c(0.002,0.001428,0.000476,0.000408) # per capita natural death rate of tick eggs
+
+g= 0 # or 0.49312 # estimated according to the formula proposed by Turchin and Hanski 1997 
+h = 9.9 
 q= 56 # estimation according to Turchin and Hanski 1997 but with data from UK
-sigma <- c(0.0083,0.0083) # recovery rate (1/120 mean infectious period of Lyme from Randolph et al. 1996)
+sigma <- c(0.0083,0.0083) # recovery rate 
+# to be changed for Babesia see Table 2 main text
+
 k = 0.18 # dispersion parameter estimated from empirical data
-taur=0.5
-tauv=0.8 
+taur=0.5 # competence of transmission rodent to vector
+tauv=0.8 # competence of transmission vector to rodent
 
 # perform a realisation
-# change initial conditions (xstart) of populations according to scenario wished to be simulated
+# change initial conditions (xstart) of populations or parameter value of molting/competence according to scenario wished to be simulated
 parameters <- c(M=M, alfa=alfa, alfas=alfas, delta=delta,c.mat=c.mat,g=g, h=h, q=q, sigma=sigma, taur=taur, tauv=tauv, k=k, gw=gw,gb=gb,N.crit=N.crit)
 xstart<-c(l=0,In=0,sn=100,ia=0,sa=0,sw=48,iw=1,rw=0,sb=75,ib=0,rb=0, nj=20, np=3)
 output<-as.data.frame(rk4(xstart,times,multihostTICK.model,parameters))
